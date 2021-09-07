@@ -1,8 +1,9 @@
 <template>
   <div id="app">
     <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
+      <h2>比对ElementUI中el-tree与el-table组件实现目录树结构异同</h2>
+      <router-link to="/tree">el-tree</router-link> |
+      <router-link to="/table">el-table</router-link>
     </div>
     <router-view />
   </div>
@@ -14,18 +15,20 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
-}
+  color: #333;
+  #nav {
+    padding: 30px;
+    h2 {
+      padding-bottom: 20px;
+      font-weight: bold;
+    }
+    a {
+      font-size: 18px;
+      color: #333;
 
-#nav {
-  padding: 30px;
-
-  a {
-    font-weight: bold;
-    color: #2c3e50;
-
-    &.router-link-exact-active {
-      color: #42b983;
+      &.router-link-exact-active {
+        color: #42b983;
+      }
     }
   }
 }

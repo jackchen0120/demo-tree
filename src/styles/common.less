@@ -1,0 +1,312 @@
+/**
+ * 描述: 公共样式文件
+ * 作者: Jack Chen @懒人码农
+ * 日期: 2021-09-05
+ **/
+
+html,
+body,
+div,
+span,
+applet,
+object,
+iframe,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote,
+pre,
+a,
+abbr,
+acronym,
+address,
+big,
+cite,
+code,
+del,
+dfn,
+em,
+img,
+ins,
+kbd,
+q,
+s,
+samp,
+small,
+strike,
+strong,
+sub,
+sup,
+tt,
+var,
+b,
+u,
+i,
+center,
+dl,
+dt,
+dd,
+ol,
+ul,
+li,
+fieldset,
+form,
+label,
+legend,
+table,
+caption,
+tbody,
+tfoot,
+thead,
+tr,
+th,
+td,
+article,
+aside,
+canvas,
+details,
+embed,
+figure,
+figcaption,
+footer,
+header,
+hgroup,
+menu,
+nav,
+output,
+ruby,
+section,
+summary,
+time,
+mark,
+audio,
+video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-weight: normal;
+  vertical-align: baseline;
+}
+
+/* HTML5 display-role reset for older browsers */
+article,
+aside,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+menu,
+nav,
+section {
+  display: block;
+}
+
+html,
+body {
+  height: 100%;
+  // user-select: none;
+}
+
+body {
+  font-size: 14px;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB,
+    Microsoft YaHei, Arial, sans-serif;
+}
+
+.w100 {
+  width: 100%;
+}
+
+.containter {
+  min-width: 1200px;
+  min-height: calc(100vh - 170px);
+  box-shadow: 0px 0px 8px 0px rgba(124, 142, 166, 0.2);
+  border-radius: 4px;
+  margin: 0 20px;
+}
+
+.tree-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e6e6e6;
+  padding: 12px 16px;
+}
+
+// 文件图标集
+.file-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  vertical-align: -3px;
+  margin-right: 4px;
+
+  &.icon-folder {
+    background: url(../assets/icon/folder.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-pdf {
+    background: url(../assets/icon/pdf.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-doc {
+    background: url(../assets/icon/docx.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-music {
+    background: url(../assets/icon/unknown.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-unknown {
+    background: url(../assets/icon/unknown.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-jpg {
+    background: url(../assets/icon/jpg.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-video {
+    background: url(../assets/icon/unknown.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-app {
+    background: url(../assets/icon/unknown.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-zip {
+    background: url(../assets/icon/zip.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-rar {
+    background: url(../assets/icon/rar.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-excel {
+    background: url(../assets/icon/excel.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-ps {
+    background: url(../assets/icon/ps.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-ai {
+    background: url(../assets/icon/ai.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-asm {
+    background: url(../assets/icon/asm.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-c4d {
+    background: url(../assets/icon/c4d.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-c4d {
+    background: url(../assets/icon/c4d.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-cad {
+    background: url(../assets/icon/cad.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-catpart {
+    background: url(../assets/icon/catpart.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-catproduct {
+    background: url(../assets/icon/catproduct.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-cdr {
+    background: url(../assets/icon/cdr.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-drwdot {
+    background: url(../assets/icon/drwdot.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-dxf {
+    background: url(../assets/icon/dxf.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-fbx {
+    background: url(../assets/icon/fbx.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-indd {
+    background: url(../assets/icon/indd.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-max {
+    background: url(../assets/icon/max.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-obj {
+    background: url(../assets/icon/obj.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-pptx {
+    background: url(../assets/icon/pptx.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-prt {
+    background: url(../assets/icon/prt.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-sldasm {
+    background: url(../assets/icon/sldasm.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-slddrw {
+    background: url(../assets/icon/slddrw.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-sldprt {
+    background: url(../assets/icon/sldprt.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+
+  &.icon-stl {
+    background: url(../assets/icon/stl.png) no-repeat center;
+    background-size: 100% 100%;
+  }
+}
