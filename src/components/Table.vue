@@ -12,7 +12,7 @@
           type="primary"
           size="small"
           plain
-          :disabled="multiple"
+          :disabled="isMultipleDownload"
           @click="handleDownload(null, 1)"
         >
           批量下载</el-button
@@ -21,7 +21,7 @@
           type="primary"
           size="small"
           plain
-          :disabled="multiple"
+          :disabled="isMultipleShare"
           @click="handleShare(null, 1)"
           >批量分享</el-button
         >
@@ -43,7 +43,6 @@
       >
         <el-table-column
           type="selection"
-          :selectable="selectable"
           width="45"
           align="center"
           label="全选"
@@ -154,6 +153,9 @@ export default {
       loading: false, // 页面预加载
       totalNum: 0, // 统计文件总数
       selectTotalNum: 0, // 选中文件数
+      newTreeArray: [], // 过滤新数组
+      isMultipleDownload: true, // 批量下载按钮是否禁用
+      isMultipleShare: true, // 批量分享按钮是否禁用
       ids: [], // 选中数组
       single: true, // 非单个禁用
       multiple: true, // 非多个禁用
@@ -204,6 +206,7 @@ export default {
           gmtUpload: 1630825248029,
           children: [
             {
+              pid: 4,
               directoryId: 41,
               directoryType: 2,
               downloadType: 1,
@@ -215,6 +218,7 @@ export default {
               children: [],
             },
             {
+              pid: 4,
               directoryId: 42,
               directoryType: 1,
               downloadType: 1,
@@ -224,6 +228,7 @@ export default {
               gmtUpload: 1630825248029,
               children: [
                 {
+                  pid: 42,
                   directoryId: 421,
                   directoryType: 2,
                   downloadType: 1,
@@ -248,6 +253,7 @@ export default {
           gmtUpload: 1630834889072,
           children: [
             {
+              pid: 5,
               directoryId: 51,
               directoryType: 2,
               downloadType: 0,
@@ -259,6 +265,7 @@ export default {
               children: [],
             },
             {
+              pid: 5,
               directoryId: 52,
               directoryType: 2,
               downloadType: 0,
@@ -281,28 +288,53 @@ export default {
     // 全选/取消选操作
     async selectAll() {
       console.log("全选==", this.tableData);
-      this.selectTotalNum = 0;
-      await this.getRecursion(this.tableData);
-      let data = this.tableData;
+      let tree = this.tableData;
+      this.isMultipleShare = this.isAllSelect;
       this.isAllSelect = !this.isAllSelect;
-      this.toggleSelect(data, this.isAllSelect, "all");
+      await this.toggleSelect(tree, this.isAllSelect, "all");
+      this.selectTotalNum = 0;
+      await this.getRecursion(tree);
+      this.newTreeArray = await this.getFilterFile(tree);
+      let downloadTypeArr = await this.getDownloadFile(this.newTreeArray);
+      this.isMultipleDownload = downloadTypeArr.includes(0) > 0 ? true : this.newTreeArray.length === 0;
+
+      setTimeout(() => {
+        console.log("旧数组===", tree);
+        console.log("downloadTypeArr===", downloadTypeArr)
+        console.log("新数组===", this.newTreeArray, this.selectTotalNum);
+      });
     },
     // 选择某行
     async selectRow(selection, row) {
       console.log("选择某行===", row);
-      this.selectTotalNum = 0;
-      await this.getRecursion(this.tableData);
+      let tree = this.tableData;
       this.$set(row, "isChecked", !row.isChecked);
-      this.$nextTick(() => {
+      this.$nextTick(async () => {
         this.isAllSelect = row.isChecked;
-        this.toggleSelect(selection, row.isChecked, "tr");
-        this.toggleSelect(row, row.isChecked, "tr");
+        await this.toggleSelect(selection, row.isChecked, "tr");
+        await this.toggleSelect(row, row.isChecked, "tr");
       });
+      
+      this.selectTotalNum = 0;
+      await this.getRecursion(tree);
+      await this.findParent(row, tree, row.isChecked);
+      this.newTreeArray = await this.getFilterFile(tree);
+      let downloadTypeArr = await this.getDownloadFile(this.newTreeArray);
+      this.isMultipleDownload = downloadTypeArr.includes(0) > 0 ? true : this.newTreeArray.length === 0;
+
+      setTimeout(() => {
+        console.log("treeData===", tree, downloadTypeArr);
+        console.log(
+          "新数组newTreeArray===",
+          this.newTreeArray,
+          this.selectTotalNum
+        );
+      }, 500);
     },
     // 改变选中
-    toggleSelection(row, flag) {
+    async toggleSelection(row, flag) {
       this.$set(row, "isChecked", flag);
-      this.$nextTick(() => {
+      this.$nextTick(async () => {
         if (flag) {
           this.$refs.table.toggleRowSelection(row, flag);
         } else {
@@ -311,25 +343,63 @@ export default {
       });
     },
     // 递归子级
-    toggleSelect(data, flag, type) {
+    async toggleSelect(data, flag, type) {
       if (type === "all") {
         if (data.length > 0) {
-          data.forEach((item) => {
-            this.toggleSelection(item, flag);
+          data.forEach(async (item) => {
+            await this.toggleSelection(item, flag);
             if (item.children && item.children.length > 0) {
-              this.toggleSelect(item.children, flag, type);
+              await this.toggleSelect(item.children, flag, type);
             }
           });
         }
       } else {
         if (data.children && data.children.length > 0) {
-          data.children.forEach((item) => {
+          data.children.forEach(async (item) => {
             item.isChecked = !item.isChecked;
             this.$refs.table.toggleRowSelection(item, flag);
-            this.toggleSelect(item, flag, type);
+            await this.toggleSelect(item, flag, type);
           });
         }
       }
+    },
+    // 选中子节点获取所有父节点
+    async findParent(childNode, treeData, checked) {
+      if (!treeData) return; 
+      for (let i = 0; i < treeData.length; i++) {
+        // 父节点查询条件
+        if (treeData[i].directoryId === childNode.pid) {
+          console.log(treeData[i])
+          // 同级子节点是否有一条被选中
+          let isBoolean = treeData[i].children.some((item) => {
+            return item.isChecked === true
+          })
+          this.$set(treeData[i], "isChecked", isBoolean);
+          treeData[i].isChecked = isBoolean;
+          console.log('isBoolean===', isBoolean);
+          // 如果找到结果,保存当前节点
+          // 用当前节点再去原数据查找当前节点的父节点
+          await this.findParent(treeData[i], this.tableData, checked);
+          // break;
+        } else {
+          if (treeData[i].children) {
+            // 没找到，遍历该节点的子节点
+            await this.findParent(childNode, treeData[i].children, checked);
+          }
+        }
+      }
+    },
+    // 递归过滤保留被选中的目录树数组
+    getFilterFile(tree) {
+      return tree
+        .filter((item) => item.isChecked === true)
+        .map((item) => {
+          item = Object.assign({}, item);
+          if (item.children) {
+            item.children = this.getFilterFile(item.children);
+          }
+          return item;
+        });
     },
     // 统计列表总文件数（也可以直接后端返回总文件个数）
     getTotalNum(tree) {
@@ -346,7 +416,7 @@ export default {
     async getRecursion(tree) {
       for (let item of tree) {
         if (item.directoryType === 2 && item.isChecked) {
-          this.selectTotalNum += 1
+          this.selectTotalNum += 1;
         }
         if (item.children) {
           await this.getRecursion(item.children);
@@ -355,10 +425,25 @@ export default {
     },
     // 当选择项发生变化时会触发该事件
     handleSelectionChange(selection) {
+      console.log('selection===', selection);
       this.ids = selection.map((item) => item.directoryId);
-      this.downloadTypeArr = selection.map((item) => item.downloadType);
       this.single = selection.length !== 1;
       this.multiple = !selection.length;
+      this.isMultipleShare = selection.length === 0;
+      // console.log('旧数组===', this.tableData);
+      // console.log('新数组===', this.downloadTypeArr);
+    },
+    // 递归统计被选中的文件是否包含不可下载文件
+    async getDownloadFile(tree, arrList = []) {
+      for (let item of tree) {
+        if (item.directoryType === 2) {
+          arrList.push(item.downloadType)
+        }
+        if (item.children) {
+          await this.getDownloadFile(item.children, arrList)
+        }
+      }
+      return arrList
     },
     // 批量下载
     async handleDownload(row, type) {

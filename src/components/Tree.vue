@@ -143,13 +143,10 @@ export default {
       isCheckedAll: false, // 是否全选状态
       isIndeterminate: false, // 是否半选状态
       isMultipleDownload: true, // 批量下载按钮是否禁用
-      isDownloadFile: true, // 选中的所有文件是否可下载
-      isDownloadFileBtn: true, // 文件是否可下载
       isMultipleShare: true, // 批量分享按钮是否禁用
       newTreeArray: [], // 过滤新数组
       totalNum: 0, // 统计文件数
       selectTotalNum: 0, // 选中文件数
-      type: 0,
       props: { // 配置选项
         children: "children",
         label: "name",
@@ -283,7 +280,6 @@ export default {
     async handleCheckAllChange(val) {
       console.log("是否全选===", val);
       let tree = this.treeData;
-      this.type = 1;
       this.isMultipleShare = !val;
       this.isIndeterminate = false;
       if (val) {
@@ -318,7 +314,6 @@ export default {
     // 当复选框被点击的时候触发
     async handleCheckChange(data, node) {
       // console.log(data, node)
-      this.type = 0;
       let tree = this.treeData;
       if (node.checkedNodes.length > 0) {
         await this.selectCheckedAll(node.checkedNodes, true);
@@ -328,7 +323,6 @@ export default {
         this.isIndeterminate = false;
         this.isMultipleDownload = true;
         this.isMultipleShare = true;
-        this.isDownloadFile = true;
         this.newTreeArray = [];
       }
       this.selectTotalNum = 0;
@@ -353,7 +347,6 @@ export default {
     // 节点选中状态发生变化时的回调
     async handleCurChange(data, checked, indeterminate) {
       console.log(data, checked, indeterminate);
-      if (this.type === 1) return;
       if (!checked) {
         if (indeterminate) {
           data.isChecked = true
@@ -362,6 +355,7 @@ export default {
           console.log(checked)
           await this.findParent(data, this.treeData, checked);
         }
+        // data.isChecked = false;
       } else {
         await this.findParent(data, this.treeData, checked);
       }
@@ -380,19 +374,23 @@ export default {
         }
       });
     },
+    // 选中子节点获取所有父节点
     async findParent(childNode, treeData, checked) {
       if (!treeData) return; 
       for (let i = 0; i < treeData.length; i++) {
         // 父节点查询条件
         if (treeData[i].directoryId === childNode.pid) {
           console.log(treeData[i])
+          // 同级子节点是否有一条被选中
           let isBoolean = treeData[i].children.some((item) => {
             return item.isChecked === true
           })
           treeData[i].isChecked = isBoolean;
+          console.log('isBoolean===', isBoolean);
           // 如果找到结果,保存当前节点
           // 用当前节点再去原数据查找当前节点的父节点
           await this.findParent(treeData[i], this.tableData, checked);
+          // break;
         } else {
           if (treeData[i].children) {
             // 没找到，遍历该节点的子节点
