@@ -90,6 +90,7 @@
           </template>
         </el-table-column>
         <el-table-column
+          prop="gmtUpload"
           label="上传时间"
           align="center"
           width="200"

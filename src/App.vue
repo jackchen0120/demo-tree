@@ -3,7 +3,8 @@
     <div id="nav">
       <h2>比对ElementUI中el-tree与el-table组件实现目录树结构异同</h2>
       <router-link to="/tree">el-tree</router-link> |
-      <router-link to="/table">el-table</router-link>
+      <router-link to="/table">el-table</router-link> |
+      <router-link to="/vxe">vxe-table</router-link>
     </div>
     <router-view />
   </div>

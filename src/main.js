@@ -6,6 +6,12 @@ import dayjs from "dayjs"; // 引入日期工具库
 import pipeMethod from "./utils/pipe"; // 引入全局管道模块
 import "./styles/common.less"; // 引入全局样式文件
 
+import 'xe-utils'
+import VXETable from 'vxe-table'
+import 'vxe-table/lib/index.css'
+ 
+Vue.use(VXETable)
+
 for (let key in pipeMethod) {
   // 全局管道
   Vue.filter(key, pipeMethod[key]);

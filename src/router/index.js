@@ -20,6 +20,11 @@ const routes = [
     name: "Table",
     component: () => import("../components/Table.vue"),
   },
+  {
+    path: "/vxe",
+    name: "Vxe",
+    component: () => import("../components/VxeTable.vue"),
+  },
 ];
 
 const router = new VueRouter({

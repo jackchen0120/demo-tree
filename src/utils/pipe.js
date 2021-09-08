@@ -142,6 +142,9 @@ const pipeMethod = {
   },
   // 字节单位转换
   renderSize(value, n) {
+    if (n === undefined) {
+      n = 2;
+    }
     if (!value) {
       return "0 Bytes";
     }
