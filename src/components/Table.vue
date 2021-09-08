@@ -279,19 +279,19 @@ export default {
   },
   methods: {
     // 全选/取消选操作
-    selectAll() {
+    async selectAll() {
       console.log("全选==", this.tableData);
       this.selectTotalNum = 0;
-      this.getRecursion(this.tableData);
+      await this.getRecursion(this.tableData);
       let data = this.tableData;
       this.isAllSelect = !this.isAllSelect;
       this.toggleSelect(data, this.isAllSelect, "all");
     },
     // 选择某行
-    selectRow(selection, row) {
+    async selectRow(selection, row) {
       console.log("选择某行===", row);
       this.selectTotalNum = 0;
-      this.getRecursion(this.tableData);
+      await this.getRecursion(this.tableData);
       this.$set(row, "isChecked", !row.isChecked);
       this.$nextTick(() => {
         this.isAllSelect = row.isChecked;
@@ -343,17 +343,15 @@ export default {
       }
     },
     // 统计选中所有文件数
-    getRecursion(tree) {
-      this.$nextTick(async () => {
-        tree.map(async (item) => {
-          if (item.directoryType === 2 && item.isChecked) {
-            this.selectTotalNum += 1;
-          }
-          if (item.children) {
-            this.getRecursion(item.children);
-          }
-        });
-      });
+    async getRecursion(tree) {
+      for (let item of tree) {
+        if (item.directoryType === 2 && item.isChecked) {
+          this.selectTotalNum += 1
+        }
+        if (item.children) {
+          await this.getRecursion(item.children);
+        }
+      }
     },
     // 当选择项发生变化时会触发该事件
     handleSelectionChange(selection) {
