@@ -7,7 +7,7 @@
           type="primary"
           size="small"
           plain
-          :disabled="multiple"
+          :disabled="(isMultipleDownload && isDownloadFile) || isDownloadFileBtn"
           @click="handleDownload(null, 1)"
         >
           批量下载</el-button
@@ -16,7 +16,7 @@
           type="primary"
           size="small"
           plain
-          :disabled="multiple"
+          :disabled="isMultipleShare"
           @click="handleShare(null, 1)"
           >批量分享</el-button
         >
@@ -25,20 +25,15 @@
     </div>
     <div class="tree-box">
       <vxe-table
-        resizable
+        ref="tree"
         highlight-hover-row
         :tree-config="{ children: 'children', expandAll: true }"
         :data="tableData"
-        :checkbox-config="{ labelField: 'name', highlight: true }"
+        :checkbox-config="{ labelField: 'name' }"
         @checkbox-all="selectAll"
-        @checkbox-change="selectChangeEvent"
+        @checkbox-change="selectTr"
       >
-        <vxe-column
-          type="checkbox"
-          title="名称"
-          min-width="280"
-          tree-node
-        >
+        <vxe-column type="checkbox" title="名称" min-width="280" tree-node>
           <template v-slot="{ row }">
             <el-tooltip effect="dark" placement="left">
               <div slot="content">
@@ -123,7 +118,15 @@
 export default {
   data() {
     return {
-      multiple: true,
+      loading: false, // 页面预加载
+      isCheckedAll: false, // 是否全选状态
+      isMultipleDownload: true, // 批量下载按钮是否禁用
+      isDownloadFile: true, // 选中的所有文件是否可下载
+      isDownloadFileBtn: true, // 文件是否可下载
+      isMultipleShare: true, // 批量分享按钮是否禁用
+      newTreeArray: [], // 过滤新数组
+      totalNum: 0, // 统计文件数
+      selectTotalNum: 0, // 选中文件数
       tableData: [
         // 初始化目录树数据
         {
@@ -169,6 +172,7 @@ export default {
           gmtUpload: 1630825248029,
           children: [
             {
+              pid: 4,
               directoryId: 41,
               directoryType: 2,
               downloadType: 1,
@@ -180,6 +184,7 @@ export default {
               children: [],
             },
             {
+              pid: 4,
               directoryId: 42,
               directoryType: 1,
               downloadType: 1,
@@ -189,6 +194,7 @@ export default {
               gmtUpload: 1630825248029,
               children: [
                 {
+                  pid: 42,
                   directoryId: 421,
                   directoryType: 2,
                   downloadType: 1,
@@ -213,6 +219,7 @@ export default {
           gmtUpload: 1630834889072,
           children: [
             {
+              pid: 5,
               directoryId: 51,
               directoryType: 2,
               downloadType: 0,
@@ -224,6 +231,7 @@ export default {
               children: [],
             },
             {
+              pid: 5,
               directoryId: 52,
               directoryType: 2,
               downloadType: 0,
@@ -239,19 +247,160 @@ export default {
       ],
     };
   },
+  async mounted() {
+    await this.getTotalNum(this.tableData);
+  },
   methods: {
-    selectAll({ records }) {
-      console.log('全选===', records)
+    async selectAll({ records, indeterminates, checked }) {
+      // console.log("全选===", records, indeterminates, checked);
+      let tree = this.tableData;
+      console.log("全选==", tree, records, indeterminates);
+      this.isMultipleShare = !checked;
+      if (checked) {
+        // 全选
+        this.isMultipleDownload = tree[0].downloadType === 0;
+        this.isDownloadFileBtn = this.isMultipleDownload;
+      } else {
+        // 取消全选
+        this.isMultipleDownload = true;
+        this.isDownloadFile = true;
+      }
+      await this.selectCheckedAll(tree, checked)
+      this.selectTotalNum = 0;
+      await this.getRecursion(tree);
+      this.newTreeArray = await this.getFilterFile(tree);
+      setTimeout(() => {
+        console.log("旧数组===", tree);
+        console.log("新数组===", this.newTreeArray, this.selectTotalNum);
+      });
     },
-    selectChangeEvent({ records }) {
-      console.info(`勾选${records.length}个树形节点`, records);
+    // 递归是否全选反选
+    async selectCheckedAll(tree, checked) {
+      for (let item of tree) {
+        item.isChecked = checked;
+        if (item.children) {
+          await this.selectCheckedAll(item.children, checked);
+        }
+      }
+    },
+    // 单个勾选并且值发生变化时触发的事件
+    async selectTr({ records, indeterminates, checked, row }) {
+      let tree = this.tableData;
+      let arr = records.concat(indeterminates);
+      console.log(arr, checked, row)
+      if (arr && arr.length) {
+        this.isMultipleShare = false;
+        // this.isMultipleDownload = records[0].downloadType === 0;
+      } else {
+        this.isMultipleDownload = true;
+        this.isMultipleShare = true;
+        this.isDownloadFile = true;
+        this.newTreeArray = [];
+      }
+      let isChecked = checked;
+      let arr2 = [];
+      arr2.push(row);
+      await this.getCheckedChild(arr2, isChecked);
+      console.log('tree===', row.downloadType, row.isChecked)
+      await this.findParent(row, tree, checked)
+      this.isDownloadFileBtn = row.downloadType === 0 && row.isChecked;
+      this.newTreeArray = await this.getFilterFile(tree);
+      this.selectTotalNum = 0;
+      await this.getRecursion(tree);
+      
+      setTimeout(() => {
+        console.log("treeData===", tree);
+        console.log(
+          "新数组newTreeArray===",
+          this.newTreeArray,
+          this.selectTotalNum
+        );
+      }, 500);
+    },
+    // 递归所有子集设置选中状态isChecked
+    async getCheckedChild(data, flag) {
+      return data.map(async (item) => {
+        // item = Object.assign({}, item);
+        if (flag) {
+          item.isChecked = true;
+        } else {
+          item.isChecked = false;
+        }
+        if (item.children) {
+          await this.getCheckedChild(item.children, flag);
+        }
+        return item;
+      });
+    },
+    async findParent(childNode, treeData) {
+      for (let i = 0; i < treeData.length; i++) {
+        // 父节点查询条件
+        if (treeData[i].directoryId === childNode.pid) {
+          console.log(treeData[i].children)
+          if (treeData[i].children.length) {
+            treeData[i].children.map(v => {
+              if (!v.isChecked) {
+                treeData[i].isChecked = childNode.isChecked
+              }
+            })
+          } else {
+            treeData[i].isChecked = childNode.isChecked
+          }
+          // 如果找到结果,保存当前节点
+          // 用当前节点再去原数据查找当前节点的父节点
+          await this.findParent(treeData[i], this.tableData);
+          // break;
+        } else {
+          if (treeData[i].children) {
+            // 没找到，遍历该节点的子节点
+            await this.findParent(childNode, treeData[i].children);
+          }
+        }
+      }
+    },
+    // 递归过滤保留被选中的目录树数组
+    getFilterFile(tree) {
+      return tree
+        .filter((item) => item.isChecked === true)
+        .map((item) => {
+          item = Object.assign({}, item);
+          if (item.children) {
+            item.children = this.getFilterFile(item.children);
+          }
+          return item;
+        });
+    },
+    // 统计选中所有文件数
+    async getRecursion(tree) {
+      this.$nextTick(async () => {
+        return tree.map(async (item) => {
+          if (item.directoryType === 2 && item.isChecked) {
+            this.selectTotalNum += 1;
+          }
+          if (item.children) {
+            await this.getRecursion(item.children);
+          }
+        });
+      });
+    },
+    async getDownloadFile(tree, arrList = []) {
+      for (let item of tree) {
+        if (item.isChecked) {
+          arrList.push(item.downloadType);
+        }
+        if (item.children) {
+          await this.getDownloadFile(item.children, arrList);
+        }
+      }
+      return arrList;
     },
     // 批量下载
     async handleDownload(row, type) {
-      console.log("下载===", row);
+      console.log("下载===", this.newTreeArray);
       if (type === 1) {
-        console.log(this.selectTotalNum);
-        if (this.downloadTypeArr.includes(0)) {
+        let downloadTypeArr = await this.getDownloadFile(this.newTreeArray);
+        console.log(this.selectTotalNum, downloadTypeArr, this.newTreeArray);
+        if (downloadTypeArr.includes(0)) {
           return this.$message.error("请选择所有可下载的文件");
         }
         this.$message.success(`已选中${this.selectTotalNum}个文件，下载成功`);
@@ -268,12 +417,30 @@ export default {
         this.$message.success("单个目录或文件分享成功");
       }
     },
+    // 统计列表总文件数（也可以直接后端返回总文件个数）
+    async getTotalNum(tree) {
+      for (let item of tree) {
+        if (item.directoryType === 2) {
+          this.totalNum += 1;
+        }
+        if (item.children) {
+          await this.getTotalNum(item.children);
+        }
+      }
+    },
   },
 };
 </script>
  
 <style lang="less">
 .vxe-container {
+  .vxe-header--row {
+    .vxe-header--column {
+      &:nth-child(1) {
+        padding-left: 21px !important;
+      }
+    }
+  }
   .vxe-table--render-default .vxe-table--border-line {
     border: none;
   }
@@ -296,7 +463,7 @@ export default {
   .vxe-table--render-default .vxe-header--column:not(.col--ellipsis) {
     padding: 10px 0;
   }
-  .vxe-table--render-default .vxe-body--column:not(.col--ellipsis), 
+  .vxe-table--render-default .vxe-body--column:not(.col--ellipsis),
   .vxe-table--render-default .vxe-footer--column:not(.col--ellipsis) {
     padding: 4px 0;
   }

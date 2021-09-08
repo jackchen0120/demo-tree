@@ -158,6 +158,7 @@ export default {
       ids: [], // 选中数组
       single: true, // 非单个禁用
       multiple: true, // 非多个禁用
+      isAllSelect: false, // 是否全选
       downloadTypeArr: [],
       tableData: [
         // 初始化目录树数据

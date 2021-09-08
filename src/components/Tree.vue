@@ -138,14 +138,12 @@ export default {
       newTreeArray: [], // 过滤新数组
       totalNum: 0, // 统计文件数
       selectTotalNum: 0, // 选中文件数
-      props: {
-        // 配置选项
+      props: { // 配置选项
         children: "children",
         label: "name",
         isLeaf: "leaf",
       },
-      treeData: [
-        // 初始化目录树数据
+      treeData: [ // 初始化目录树数据
         {
           directoryId: 1,
           directoryType: 2, // 1:目录 2:文件
@@ -299,10 +297,9 @@ export default {
       this.isCheckedAll = this.newTreeArray.length === tree.length;
       this.isIndeterminate =
         this.newTreeArray.length > 0 && this.newTreeArray.length < tree.length;
-
       if (node.checkedNodes.length > 0) {
         this.isMultipleShare = false;
-        console.log("选中===", node.checkedNodes);
+        console.log('选中===', node.checkedNodes[0])
         this.isMultipleDownload = node.checkedNodes[0].downloadType === 0;
       } else {
         this.isCheckedAll = false;
@@ -312,7 +309,6 @@ export default {
         this.isDownloadFile = true;
         this.newTreeArray = [];
       }
-
       setTimeout(() => {
         console.log("treeData===", tree);
         console.log(
@@ -324,48 +320,23 @@ export default {
     },
     // 节点选中状态发生变化时的回调
     handleCurChange(data, checked, indeterminate) {
-      console.log("选中类型回调===", data.directoryType);   
+      // console.log(data, checked, indeterminate);
       let isChecked = checked;
-      let childKey = this.$refs.tree.getCheckedKeys();
-      let parentKey = this.$refs.tree.getHalfCheckedKeys();
-      let newArr = childKey.concat(parentKey);
-      if (checked) {
-        newArr.forEach(item => {
-          console.log('111')
-          if (data.directoryId === item) {
-            data.isChecked = true
-          }
-        })
-      } else {
-        data.isChecked = false
-      }
-      console.log("合并数组===", checked);
-      console.log("子节点===", childKey);  
-      console.log("父节点===", parentKey); 
-      // if (isChecked) {
-      //   this.$refs.tree.setChecked(data.directoryId, true)
-      //   console.log("子节点===", childKey);  
-      //   console.log("父节点===", parentKey);  
-      // } else {
-      //   console.log("未选中子节点===", childKey);  
-      //   console.log("未选中父节点===", parentKey); 
-      // }
-      // let arr = [];
-      // arr.push(data);
-      // this.getCheckedChild(arr, [], isChecked, indeterminate);
+      let arr = [];
+      arr.push(data);
+      this.getCheckedChild(arr, [], isChecked, indeterminate);
     },
     // 递归所有子集设置选中状态isChecked
     async getCheckedChild(data, arr, flag, isParent) {
       return data.map(async (item) => {
-        // item = Object.assign({}, item);
         if (flag) {
           item.isChecked = true;
         } else {
           item.isChecked = false;
         }
-        // if (isParent && item.directoryType === 1) {
-        //   item.isChecked = true;
-        // }
+        if (isParent && item.directoryType === 1) {
+          item.isChecked = true;
+        }
         if (item.children) {
           await this.getCheckedChild(item.children, arr, flag, isParent);
         }
@@ -410,20 +381,20 @@ export default {
     },
     async getDownloadFile(tree, arrList = []) {
       for (let item of tree) {
-        arrList.push(item.downloadType);
+        arrList.push(item.downloadType)
         if (item.children) {
-          await this.getDownloadFile(item.children, arrList);
+          await this.getDownloadFile(item.children, arrList)
         }
       }
-      return arrList;
+      return arrList
     },
     // 批量下载
     async handleDownload(row, type) {
-      console.log("下载===", row);
+      console.log('下载===', row)
       if (type === 1) {
         let downloadTypeArr = await this.getDownloadFile(this.newTreeArray);
         if (downloadTypeArr.includes(0)) {
-          return this.$message.error("请选择所有可下载的文件");
+          return this.$message.error('请选择所有可下载的文件')
         }
         this.$message.success(`已选中${this.selectTotalNum}个文件，下载成功`);
       } else {
@@ -432,7 +403,7 @@ export default {
     },
     // 批量分享
     handleShare(row, type) {
-      console.log("分享===", row);
+      console.log('分享===', row)
       if (type === 1) {
         this.$message.success(`已选中${this.selectTotalNum}个文件，分享成功`);
       } else {
