@@ -12,9 +12,7 @@
           type="primary"
           size="small"
           plain
-          :disabled="
-            (isMultipleDownload && isDownloadFile) || isDownloadFileBtn
-          "
+          :disabled="isMultipleDownload"
           @click="handleDownload(null, 1)"
         >
           批量下载</el-button
@@ -73,6 +71,20 @@
                   </el-tooltip>
                   {{ node.label }}
                 </span>
+                <span class="secret-box">
+                  {{ data.secretType | secretType }}
+                </span>
+                <span class="download-box">
+                  {{ data.downloadType | downloadStatus }}
+                </span>
+                <span class="operate-box">
+                  <el-button
+                    type="text"
+                    size="small"
+                    @click.stop="() => handleShare(data, 2)"
+                    >分享</el-button
+                  >
+                </span>
               </div>
               <div v-if="data.directoryType === 2" class="node_div">
                 <span class="name-box" :title="node.label">
@@ -101,14 +113,13 @@
                 </span>
                 <span class="operate-box">
                   <el-button
-                    v-if="data.downloadType === 1 && data.directoryType === 2"
+                    v-if="data.downloadType === 1"
                     type="text"
                     size="small"
                     @click="() => handleDownload(data, 2)"
                     >下载</el-button
                   >
                   <el-button
-                    v-if="data.directoryType === 2"
                     type="text"
                     size="small"
                     @click="() => handleShare(data, 2)"
@@ -138,6 +149,7 @@ export default {
       newTreeArray: [], // 过滤新数组
       totalNum: 0, // 统计文件数
       selectTotalNum: 0, // 选中文件数
+      type: 0,
       props: { // 配置选项
         children: "children",
         label: "name",
@@ -187,6 +199,7 @@ export default {
           gmtUpload: 1630825248029,
           children: [
             {
+              pid: 4,
               directoryId: 41,
               directoryType: 2,
               downloadType: 1,
@@ -198,6 +211,7 @@ export default {
               children: [],
             },
             {
+              pid: 4,
               directoryId: 42,
               directoryType: 1,
               downloadType: 1,
@@ -207,6 +221,7 @@ export default {
               gmtUpload: 1630825248029,
               children: [
                 {
+                  pid: 42,
                   directoryId: 421,
                   directoryType: 2,
                   downloadType: 1,
@@ -231,6 +246,7 @@ export default {
           gmtUpload: 1630834889072,
           children: [
             {
+              pid: 5,
               directoryId: 51,
               directoryType: 2,
               downloadType: 0,
@@ -242,6 +258,7 @@ export default {
               children: [],
             },
             {
+              pid: 5,
               directoryId: 52,
               directoryType: 2,
               downloadType: 0,
@@ -266,41 +283,46 @@ export default {
     async handleCheckAllChange(val) {
       console.log("是否全选===", val);
       let tree = this.treeData;
+      this.type = 1;
       this.isMultipleShare = !val;
       this.isIndeterminate = false;
       if (val) {
         // 全选
-        this.isMultipleDownload = tree[0].downloadType === 0;
-        this.isDownloadFileBtn = this.isMultipleDownload;
         this.$refs.tree.setCheckedNodes(tree);
       } else {
         // 取消全选
         this.$refs.tree.setCheckedNodes([]);
-        this.isMultipleDownload = true;
-        this.isDownloadFile = true;
       }
+      await this.selectCheckedAll(tree, val);
       this.selectTotalNum = 0;
       await this.getRecursion(tree);
       this.newTreeArray = await this.getFilterFile(tree);
+      let downloadTypeArr = await this.getDownloadFile(this.newTreeArray);
+      this.isMultipleDownload = downloadTypeArr.includes(0) > 0 ? true : this.newTreeArray.length === 0;
+
       setTimeout(() => {
         console.log("旧数组===", tree);
+        console.log("downloadTypeArr===", downloadTypeArr)
         console.log("新数组===", this.newTreeArray, this.selectTotalNum);
       });
     },
+    // 递归全选反选
+    async selectCheckedAll(tree, checked) {
+      for (let item of tree) {
+        item.isChecked = checked;
+        if (item.children) {
+          await this.selectCheckedAll(item.children, checked);
+        }
+      }
+    },
     // 当复选框被点击的时候触发
     async handleCheckChange(data, node) {
+      // console.log(data, node)
+      this.type = 0;
       let tree = this.treeData;
-      this.selectTotalNum = 0;
-      await this.getRecursion(tree);
-      this.isDownloadFileBtn = data.downloadType === 0 && data.isChecked;
-      this.newTreeArray = await this.getFilterFile(tree);
-      this.isCheckedAll = this.newTreeArray.length === tree.length;
-      this.isIndeterminate =
-        this.newTreeArray.length > 0 && this.newTreeArray.length < tree.length;
       if (node.checkedNodes.length > 0) {
+        await this.selectCheckedAll(node.checkedNodes, true);
         this.isMultipleShare = false;
-        console.log('选中===', node.checkedNodes[0])
-        this.isMultipleDownload = node.checkedNodes[0].downloadType === 0;
       } else {
         this.isCheckedAll = false;
         this.isIndeterminate = false;
@@ -309,8 +331,18 @@ export default {
         this.isDownloadFile = true;
         this.newTreeArray = [];
       }
+      this.selectTotalNum = 0;
+      await this.getRecursion(tree);
+      this.newTreeArray = await this.getFilterFile(tree);
+      this.isCheckedAll = this.newTreeArray.length === tree.length;
+      this.isIndeterminate =
+        this.newTreeArray.length > 0 && this.newTreeArray.length < tree.length;
+
+      let downloadTypeArr = await this.getDownloadFile(this.newTreeArray);
+      this.isMultipleDownload = downloadTypeArr.includes(0) > 0 ? true : this.newTreeArray.length === 0;
+
       setTimeout(() => {
-        console.log("treeData===", tree);
+        console.log("treeData===", tree, downloadTypeArr);
         console.log(
           "新数组newTreeArray===",
           this.newTreeArray,
@@ -319,29 +351,55 @@ export default {
       }, 500);
     },
     // 节点选中状态发生变化时的回调
-    handleCurChange(data, checked, indeterminate) {
-      // console.log(data, checked, indeterminate);
-      let isChecked = checked;
-      let arr = [];
-      arr.push(data);
-      this.getCheckedChild(arr, [], isChecked, indeterminate);
+    async handleCurChange(data, checked, indeterminate) {
+      console.log(data, checked, indeterminate);
+      if (this.type === 1) return;
+      if (!checked) {
+        if (indeterminate) {
+          data.isChecked = true
+        } else {
+          data.isChecked = false;
+          console.log(checked)
+          await this.findParent(data, this.treeData, checked);
+        }
+      } else {
+        await this.findParent(data, this.treeData, checked);
+      }
     },
+
     // 递归所有子集设置选中状态isChecked
-    async getCheckedChild(data, arr, flag, isParent) {
+    async getCheckedChild(data, flag) {
       return data.map(async (item) => {
         if (flag) {
           item.isChecked = true;
         } else {
           item.isChecked = false;
         }
-        if (isParent && item.directoryType === 1) {
-          item.isChecked = true;
-        }
         if (item.children) {
-          await this.getCheckedChild(item.children, arr, flag, isParent);
+          await this.getCheckedChild(item.children, flag);
         }
-        return item;
       });
+    },
+    async findParent(childNode, treeData, checked) {
+      if (!treeData) return; 
+      for (let i = 0; i < treeData.length; i++) {
+        // 父节点查询条件
+        if (treeData[i].directoryId === childNode.pid) {
+          console.log(treeData[i])
+          let isBoolean = treeData[i].children.some((item) => {
+            return item.isChecked === true
+          })
+          treeData[i].isChecked = isBoolean;
+          // 如果找到结果,保存当前节点
+          // 用当前节点再去原数据查找当前节点的父节点
+          await this.findParent(treeData[i], this.tableData, checked);
+        } else {
+          if (treeData[i].children) {
+            // 没找到，遍历该节点的子节点
+            await this.findParent(childNode, treeData[i].children, checked);
+          }
+        }
+      }
     },
     // 统计列表总文件数（也可以直接后端返回总文件个数）
     getTotalNum(tree) {
@@ -356,16 +414,14 @@ export default {
     },
     // 统计选中所有文件数
     async getRecursion(tree) {
-      this.$nextTick(async () => {
-        tree.map(async (item) => {
-          if (item.directoryType === 2 && item.isChecked) {
-            this.selectTotalNum += 1;
-          }
-          if (item.children) {
-            await this.getRecursion(item.children);
-          }
-        });
-      });
+      for (let item of tree) {
+        if (item.directoryType === 2 && item.isChecked) {
+          this.selectTotalNum += 1
+        }
+        if (item.children) {
+          await this.getRecursion(item.children);
+        }
+      }
     },
     // 递归过滤保留被选中的目录树数组
     getFilterFile(tree) {
@@ -379,35 +435,42 @@ export default {
           return item;
         });
     },
+    // 递归统计被选中的文件是否包含不可下载文件
     async getDownloadFile(tree, arrList = []) {
       for (let item of tree) {
-        arrList.push(item.downloadType)
+        if (item.directoryType === 2) {
+          arrList.push(item.downloadType)
+        }
         if (item.children) {
           await this.getDownloadFile(item.children, arrList)
         }
       }
       return arrList
     },
-    // 批量下载
+    // 批量或单个下载
     async handleDownload(row, type) {
       console.log('下载===', row)
       if (type === 1) {
-        let downloadTypeArr = await this.getDownloadFile(this.newTreeArray);
-        if (downloadTypeArr.includes(0)) {
-          return this.$message.error('请选择所有可下载的文件')
-        }
         this.$message.success(`已选中${this.selectTotalNum}个文件，下载成功`);
       } else {
-        this.$message.success("单个目录或文件下载成功");
+        if (row.directoryType === 1) {
+          this.$message.success("目录下载成功");
+        } else {
+          this.$message.success("文件下载成功");
+        }
       }
     },
-    // 批量分享
+    // 批量或单个分享
     handleShare(row, type) {
       console.log('分享===', row)
       if (type === 1) {
         this.$message.success(`已选中${this.selectTotalNum}个文件，分享成功`);
       } else {
-        this.$message.success("单个目录或文件分享成功");
+        if (row.directoryType === 1) {
+          this.$message.success("目录分享成功");
+        } else {
+          this.$message.success("文件分享成功");
+        }
       }
     },
   },

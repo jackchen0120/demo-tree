@@ -108,7 +108,7 @@
           align="center"
           width="100"
         >
-          <template slot-scope="scope" v-if="scope.row.directoryType === 2">
+          <template slot-scope="scope">
             {{ scope.row.secretType | secretType }}
           </template>
         </el-table-column>
@@ -118,7 +118,7 @@
           align="center"
           width="100"
         >
-          <template slot-scope="scope" v-if="scope.row.directoryType === 2">
+          <template slot-scope="scope">
             {{ scope.row.downloadType | downloadStatus }}
           </template>
         </el-table-column>
@@ -134,7 +134,6 @@
               >下载</el-button
             >
             <el-button
-              v-if="scope.row.directoryType === 2"
               type="text"
               size="small"
               @click="() => handleShare(scope.row, 2)"
@@ -373,7 +372,11 @@ export default {
         }
         this.$message.success(`已选中${this.selectTotalNum}个文件，下载成功`);
       } else {
-        this.$message.success("单个目录或文件下载成功");
+        if (row.directoryType === 1) {
+          this.$message.success("目录下载成功");
+        } else {
+          this.$message.success("文件下载成功");
+        }
       }
     },
     // 批量分享
@@ -382,7 +385,11 @@ export default {
       if (type === 1) {
         this.$message.success(`已选中${this.selectTotalNum}个文件，分享成功`);
       } else {
-        this.$message.success("单个目录或文件分享成功");
+        if (row.directoryType === 1) {
+          this.$message.success("目录分享成功");
+        } else {
+          this.$message.success("文件分享成功");
+        }
       }
     },
   },
